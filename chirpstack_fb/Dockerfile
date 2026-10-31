@@ -5,7 +5,7 @@ ARG BUILD_ARCH
 ARG CHIRPSTACK_VERSION="4.20.0"
 ARG GATEWAY_BRIDGE_VERSION="4.1.2"
 
-RUN apk add --no-cache redis
+RUN apk add --no-cache nginx redis
 
 # Official static builds from artifacts.chirpstack.io, pinned by SHA-256.
 RUN set -eux; \

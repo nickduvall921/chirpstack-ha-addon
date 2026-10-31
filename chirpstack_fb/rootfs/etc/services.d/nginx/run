@@ -1,0 +1,4 @@
+#!/usr/bin/with-contenv bashio
+bashio::log.info "Starting the ingress proxy for the web interface"
+mkdir -p /run/nginx
+exec nginx -c /etc/nginx/ingress.conf -g 'daemon off;'

@@ -1,5 +1,5 @@
 name: ChirpStack LoRaWAN
-version: "4.20.0-fb1"
+version: "4.20.0-fb2"
 slug: chirpstack_fb
 description: >-
   ChirpStack LoRaWAN network server and gateway bridge for Farm Base
@@ -23,6 +23,10 @@ ports:
 ports_description:
   1700/udp: LoRa gateways (Semtech UDP packet forwarder)
   8080/tcp: ChirpStack web interface and API
+ingress: true
+ingress_port: 8099
+panel_icon: mdi:radio-tower
+panel_title: ChirpStack
 webui: http://[HOST]:[PORT:8080]
 options:
   log_level: info

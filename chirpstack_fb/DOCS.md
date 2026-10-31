@@ -6,7 +6,9 @@ its gateway bridge inside Home Assistant, set up for Canada and the US:
 
 It contains:
 
-- **ChirpStack 4.20.0** (SQLite build), with its web interface on port 8080.
+- **ChirpStack 4.20.0** (SQLite build). Its web interface opens from the
+  ChirpStack entry in the Home Assistant sidebar, which also works through
+  Home Assistant's remote access, and on port 8080 on the local network.
 - **ChirpStack Gateway Bridge 4.1.2**, listening for gateways on **UDP 1700**
   (the Semtech UDP packet forwarder that TEKTELIC KONA gateways use).
 - **Redis**, local to the add-on.
@@ -23,7 +25,8 @@ entered here.
 ## First start
 
 1. Start the add-on and open the log. Wait for `Starting ChirpStack`.
-2. Open `http://<home-assistant-ip>:8080`.
+2. Click **Open web UI** (or ChirpStack in the sidebar), or go to
+   `http://<home-assistant-ip>:8080` on the local network.
 3. Log in with **admin / admin** and change the password straight away
    (top right → Change password).
 
