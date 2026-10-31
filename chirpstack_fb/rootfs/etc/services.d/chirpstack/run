@@ -1,0 +1,6 @@
+#!/usr/bin/with-contenv bashio
+until redis-cli -h 127.0.0.1 -p 6379 ping > /dev/null 2>&1; do
+    sleep 1
+done
+bashio::log.info "Starting ChirpStack"
+exec /usr/local/bin/chirpstack -c /run/chirpstack

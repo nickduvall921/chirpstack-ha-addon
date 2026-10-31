@@ -1,0 +1,2 @@
+# Built and run on Linux; CRLF would break the shell scripts.
+* text=auto eol=lf

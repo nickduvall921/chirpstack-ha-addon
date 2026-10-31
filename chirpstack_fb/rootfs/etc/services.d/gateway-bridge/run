@@ -1,0 +1,4 @@
+#!/usr/bin/with-contenv bashio
+bashio::log.info "Starting ChirpStack Gateway Bridge (UDP 1700)"
+exec /usr/local/bin/chirpstack-gateway-bridge \
+    -c /run/chirpstack-gateway-bridge/chirpstack-gateway-bridge.toml

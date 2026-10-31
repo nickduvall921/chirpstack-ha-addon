@@ -1,0 +1,202 @@
+#!/bin/bash
+# Writes the ChirpStack and Gateway Bridge config files from environment
+# variables. Plain bash (no bashio) so it can be run and tested outside
+# Home Assistant.
+#
+# Required: CS_CONF_DIR GWB_CONF_DIR DATA_DIR API_SECRET MQTT_HOST MQTT_PORT
+# Optional: MQTT_USER MQTT_PASSWORD LOG_LEVEL (trace|debug|info|warn|error)
+set -euo pipefail
+
+: "${CS_CONF_DIR:?}" "${GWB_CONF_DIR:?}" "${DATA_DIR:?}" "${API_SECRET:?}"
+: "${MQTT_HOST:?}" "${MQTT_PORT:?}"
+MQTT_USER="${MQTT_USER:-}"
+MQTT_PASSWORD="${MQTT_PASSWORD:-}"
+LOG_LEVEL="${LOG_LEVEL:-info}"
+
+# Quote a value for a TOML basic string.
+toml_str() {
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    printf '"%s"' "$s"
+}
+
+case "$LOG_LEVEL" in
+    trace) gwb_level=6 ;;
+    debug) gwb_level=5 ;;
+    warn) gwb_level=3 ;;
+    error) gwb_level=2 ;;
+    *) gwb_level=4 ;;
+esac
+
+mqtt_server=$(toml_str "tcp://${MQTT_HOST}:${MQTT_PORT}")
+mqtt_user=$(toml_str "$MQTT_USER")
+mqtt_password=$(toml_str "$MQTT_PASSWORD")
+
+mkdir -p "$CS_CONF_DIR" "$GWB_CONF_DIR" "$DATA_DIR"
+
+cat > "$CS_CONF_DIR/chirpstack.toml" <<EOF
+[logging]
+  level=$(toml_str "$LOG_LEVEL")
+
+[sqlite]
+  path=$(toml_str "sqlite://${DATA_DIR}/chirpstack.sqlite")
+  max_open_connections=4
+  pragmas=[
+    "busy_timeout = 1000",
+    "foreign_keys = ON",
+  ]
+
+[redis]
+  servers=["redis://127.0.0.1:6379/"]
+
+[network]
+  net_id="000000"
+  enabled_regions=["us915_1"]
+
+[api]
+  bind="0.0.0.0:8080"
+  secret=$(toml_str "$API_SECRET")
+
+[integration]
+  enabled=["mqtt"]
+
+  [integration.mqtt]
+    server=${mqtt_server}
+    username=${mqtt_user}
+    password=${mqtt_password}
+    json=true
+EOF
+
+# US915 sub-band 2 (channels 8-15 + 65), from chirpstack-docker's
+# region_us915_1.toml. downlink_tx_power=-1 uses ChirpStack's US915 default
+# (21 dBm), which keeps an 8 dBi antenna inside the ISED limit.
+cat > "$CS_CONF_DIR/region_us915_1.toml" <<EOF
+[[regions]]
+  id="us915_1"
+  description="US915 (channels 8-15 + 65)"
+  common_name="US915"
+
+  [regions.gateway]
+    force_gws_private=false
+
+    [regions.gateway.backend]
+      enabled="mqtt"
+
+      [regions.gateway.backend.mqtt]
+        topic_prefix="us915_1"
+        server=${mqtt_server}
+        username=${mqtt_user}
+        password=${mqtt_password}
+        qos=0
+        clean_session=false
+        client_id=""
+        keep_alive_interval="30s"
+
+    [[regions.gateway.channels]]
+      frequency=903900000
+      bandwidth=125000
+      modulation="LORA"
+      spreading_factors=[7, 8, 9, 10]
+
+    [[regions.gateway.channels]]
+      frequency=904100000
+      bandwidth=125000
+      modulation="LORA"
+      spreading_factors=[7, 8, 9, 10]
+
+    [[regions.gateway.channels]]
+      frequency=904300000
+      bandwidth=125000
+      modulation="LORA"
+      spreading_factors=[7, 8, 9, 10]
+
+    [[regions.gateway.channels]]
+      frequency=904500000
+      bandwidth=125000
+      modulation="LORA"
+      spreading_factors=[7, 8, 9, 10]
+
+    [[regions.gateway.channels]]
+      frequency=904700000
+      bandwidth=125000
+      modulation="LORA"
+      spreading_factors=[7, 8, 9, 10]
+
+    [[regions.gateway.channels]]
+      frequency=904900000
+      bandwidth=125000
+      modulation="LORA"
+      spreading_factors=[7, 8, 9, 10]
+
+    [[regions.gateway.channels]]
+      frequency=905100000
+      bandwidth=125000
+      modulation="LORA"
+      spreading_factors=[7, 8, 9, 10]
+
+    [[regions.gateway.channels]]
+      frequency=905300000
+      bandwidth=125000
+      modulation="LORA"
+      spreading_factors=[7, 8, 9, 10]
+
+    [[regions.gateway.channels]]
+      frequency=904600000
+      bandwidth=500000
+      modulation="LORA"
+      spreading_factors=[8]
+
+  [regions.network]
+    installation_margin=10
+    rx_window=0
+    rx1_delay=1
+    rx1_dr_offset=0
+    rx2_dr=8
+    rx2_frequency=923300000
+    rx2_prefer_on_rx1_dr_lt=0
+    rx2_prefer_on_link_budget=false
+    downlink_tx_power=-1
+    adr_disabled=false
+    min_dr=0
+    max_dr=3
+    enabled_uplink_channels=[8, 9, 10, 11, 12, 13, 14, 15, 65]
+
+    [regions.network.rejoin_request]
+      enabled=false
+      max_count_n=0
+      max_time_n=0
+
+    [regions.network.class_b]
+      ping_slot_dr=8
+      ping_slot_frequency=0
+EOF
+
+cat > "$GWB_CONF_DIR/chirpstack-gateway-bridge.toml" <<EOF
+[general]
+  log_level=${gwb_level}
+
+[backend]
+  type="semtech_udp"
+
+  [backend.semtech_udp]
+    udp_bind="0.0.0.0:1700"
+
+[integration]
+  marshaler="protobuf"
+
+  [integration.mqtt]
+    event_topic_template="us915_1/gateway/{{ .GatewayID }}/event/{{ .EventType }}"
+    state_topic_template="us915_1/gateway/{{ .GatewayID }}/state/{{ .StateType }}"
+    command_topic_template="us915_1/gateway/{{ .GatewayID }}/command/#"
+
+    [integration.mqtt.auth]
+      type="generic"
+
+      [integration.mqtt.auth.generic]
+        servers=[${mqtt_server}]
+        username=${mqtt_user}
+        password=${mqtt_password}
+EOF
+
+chmod 600 "$CS_CONF_DIR"/*.toml "$GWB_CONF_DIR"/*.toml

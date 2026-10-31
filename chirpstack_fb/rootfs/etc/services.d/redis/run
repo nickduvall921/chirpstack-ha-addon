@@ -1,0 +1,12 @@
+#!/usr/bin/with-contenv bashio
+# Redis is ChirpStack's cache and event store. Local only.
+bashio::log.info "Starting Redis"
+exec redis-server \
+    --bind 127.0.0.1 \
+    --port 6379 \
+    --protected-mode yes \
+    --dir /data/redis \
+    --save 300 1 \
+    --save 60 100 \
+    --appendonly no \
+    --loglevel warning
