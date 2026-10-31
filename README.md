@@ -2,7 +2,7 @@
 
 Add this repository in Home Assistant under Settings > Add-ons > Add-on store > Repositories:
 
-    https://github.com/nickduvall921/farmbase-ha-addons
+    https://github.com/nickduvall921/chirpstack-ha-addon
 
 ## Add-ons
 

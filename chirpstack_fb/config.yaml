@@ -4,7 +4,7 @@ slug: chirpstack_fb
 description: >-
   ChirpStack LoRaWAN network server and gateway bridge for Farm Base
   (US915, sub-band 2). Uses the Mosquitto broker add-on.
-url: https://github.com/nickduvall921/farmbase-ha-addons/tree/main/chirpstack_fb
+url: https://github.com/nickduvall921/chirpstack-ha-addon/tree/main/chirpstack_fb
 arch:
   - amd64
   - aarch64
